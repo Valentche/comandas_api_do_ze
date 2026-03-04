@@ -6,7 +6,12 @@ import uvicorn
 from routers import FuncionarioRouter
 from routers import ClienteRouter
 
+# rota padrão
 app = FastAPI()
+
+@app.get("/", tags=["Root"], status_code=200)
+def root():
+    return {"detail":"API Pastelaria", "Swagger UI": "http://127.0.0.1:8000/docs", "ReDoc": "http://127.0.0.1:8000/redoc" }
 
 #mapeamento de rotas/endpoints
 app.include_router(FuncionarioRouter.router)
