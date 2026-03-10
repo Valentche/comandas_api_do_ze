@@ -19,5 +19,7 @@ app.include_router(FuncionarioRouter.router)
 app.include_router(ClienteRouter.router)
 app.include_router(ProdutoRouter.router)
 
+#PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20
+
 if __name__ == "__main__":
     uvicorn.run('main:app', host=HOST, port=int(PORT), reload=RELOAD)
