@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from domain.entities.Produto import Produto
+from domain.entities.ProdutoSchema import Produto
 router = APIRouter()
 # Criar as rotas/endpoints: GET, POST, PUT, DELETE
 @router.get("/produto/", tags=["Produto"], status_code=200)
