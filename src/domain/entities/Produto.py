@@ -6,3 +6,5 @@ class Produto(BaseModel):
     descricao: str
     preco: float
     foto: bytes | None = None #Para a foto se opcional
+
+    #PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20

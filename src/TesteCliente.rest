@@ -12,5 +12,8 @@ content-type: application/json
 PUT http://127.0.0.1:8000/cliente/2 HTTP/1.1
 content-type: application/json
 
+
 ### Verbo DELETE - excluir
 DELETE http://127.0.0.1:8000/cliente/3 HTTP/1.1
+
+#PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20

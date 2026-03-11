@@ -9,26 +9,19 @@ POST http://127.0.0.1:8000/funcionario/ HTTP/1.1
 content-type: application/json
 
 {
-    "nome" : "Sr Tio Hame Luciano Coelho",
-    "matricula" : "lu12353",
-    "cpf" : "1",
-    "telefone" : "tel2383738",
+    "nome" : "Pablo Valente Neto",
+    "matricula" : "pv12353",
+    "cpf" : "5",
+    "telefone" : "49999505651",
     "grupo" : 1,
-    "senha" : "abcBolinhas.com"
+    "senha" : "giveyourjumps.com"
 }
 
 ### Verbo PUT – atualiza
 PUT http://127.0.0.1:8000/funcionario/2 HTTP/1.1
 content-type: application/json
 
-{
-    "nome" : "Luciano Coelho",
-    "matricula" : "lu12353",
-    "cpf" : "1",
-    "telefone" : "tel2383738",
-    "grupo" : 1,
-    "senha" : "dc7378a6b6316017b81c51d720e7"
-}
-
 ### Verbo DELETE - excluir
 DELETE http://127.0.0.1:8000/funcionario/3 HTTP/1.1
+
+#PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20

@@ -5,3 +5,5 @@ class Cliente(BaseModel):
     nome: str
     cpf: str
     telefone: str
+
+    #PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20
