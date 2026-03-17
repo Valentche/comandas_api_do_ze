@@ -92,21 +92,21 @@ async def put_funcionario(id: int, funcionario_data: FuncionarioUpdate, db: Sess
                 status_code=status.HTTP_404_NOT_FOUND, detail="Funcionário não encontrado"
             )
 
-    # Verifica se está tentando atualizar para um CPF que já existe
+        # Verifica se está tentando atualizar para um CPF que já existe
         if funcionario_data.cpf and funcionario_data.cpf != funcionario.cpf:
             existing_funcionario = db.query(FuncionarioDB).filter(FuncionarioDB.cpf == funcionario_data.cpf).first()
-        if existing_funcionario:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Já existe um funcionário com este CPF"
-            )
-        
-    # Atualiza apenas os campos fornecidos
+            if existing_funcionario:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Já existe um funcionário com este CPF"
+                )
+
+        # Atualiza apenas os campos fornecidos
         update_data = funcionario_data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(funcionario, field, value)
         db.commit()
         db.refresh(funcionario)
-        
+
         return funcionario
     except HTTPException:
         raise
@@ -114,7 +114,7 @@ async def put_funcionario(id: int, funcionario_data: FuncionarioUpdate, db: Sess
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar funcionário: {str(e)}"
-    )
+        )
 
 @router.delete("/funcionario/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Funcionário"], summary="Remover funcionário")
 async def delete_funcionario(id: int, db: Session = Depends(get_db)):

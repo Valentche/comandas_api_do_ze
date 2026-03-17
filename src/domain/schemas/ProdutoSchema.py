@@ -4,7 +4,7 @@ from typing import Optional
 class ProdutoCreate(BaseModel):
     nome: str
     descricao: str
-    foto: bytes = None
+    foto: Optional[bytes] = None #DEIXAR OPICIONAL PQ TAVA DANDO ERRO
     valor_unitario: float
 
 class ProdutoUpdate(BaseModel):
@@ -18,5 +18,5 @@ class ProdutoResponse(BaseModel):
     id: int
     nome: str
     descricao: str
-    foto: bytes
+    foto: Optional[bytes] = None #MESMA COISA AQUI, TAVA DANDO ERRO COM A FOTO OBRIGADOTIROA
     valor_unitario: float
