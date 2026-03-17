@@ -4,7 +4,7 @@ import os
 # localiza o arquivo de .env
 dotenv_file = find_dotenv()
 
-# Carrega o arquivo .env
+# Carrega o arquio .env
 load_dotenv(dotenv_file)
 
 # Configurações da API
