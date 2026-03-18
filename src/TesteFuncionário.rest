@@ -22,8 +22,8 @@ PUT http://127.0.0.1:8000/funcionario/1 HTTP/1.1
 content-type: application/json
 
 {
-    "telefone": "49988546777",
-    "grupo": 2
+    "telefone": "49988512347",
+    "grupo": 4
 }
 
 ### Verbo DELETE - excluir

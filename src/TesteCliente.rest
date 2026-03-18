@@ -2,16 +2,16 @@
 GET http://localhost:8000/cliente/ HTTP/1.1
 
 ### Verbo GET – listar um
-GET http://localhost:8000/cliente/{id} HTTP/1.1
+GET http://localhost:8000/cliente/2 HTTP/1.1
 
 ### Verbo POST – adicionar
 POST http://127.0.0.1:8000/cliente/ HTTP/1.1
 content-type: application/json
 
 {
-    "nome": "Tio Sr Lucioando",
-    "cpf": "191202834876",
-    "telefone": "49929999999"
+    "nome": "Pablo Valente Neto",
+    "cpf": "012927312438",
+    "telefone": "49921512399"
 }
 
 ### Verbo PUT – atualiza
@@ -20,10 +20,10 @@ content-type: application/json
 
 {
     "nome": "Pablo Valente Neto",
-    "telefone": "49988884457"
+    "telefone": "49988123457"
 }
 
 ### Verbo DELETE - excluir
-DELETE http://127.0.0.1:8000/cliente/2 HTTP/1.1
+DELETE http://127.0.0.1:8000/cliente/1 HTTP/1.1
 
 #PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20
