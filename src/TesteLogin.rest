@@ -3,15 +3,15 @@ POST http://127.0.0.1:8000/auth/login HTTP/1.1
 content-type: application/json
 
 {
-"cpf" : "1",
-"senha" : "abcBolinhas"
+"cpf" : "1515",
+"senha" : "zdb123"
 }
 
 ### token gerado
 
-@access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWQiOjIsImdydXBvIjoyLCJleHAiOjE3NzQ4MTUxMDgsInR5cGUiOiJhY2Nlc3MifQ.Qs9Un1cLQN3-tS30QM7m3O_KUci9y9ZvDCclUG1g2cQ
+@access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWQiOjIsImdydXBvIjoyLCJleHAiOjE3NzQ4MTg4ODYsInR5cGUiOiJhY2Nlc3MifQ.59t9Wt_fcZPA_9OwZbsNazqwOoQ_p1k2upj7HpHB96s
 
-@refresh_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWQiOjIsImdydXBvIjoyLCJleHAiOjE3NzU0MTkxMjMsInR5cGUiOiJyZWZyZXNoIn0.WwzqzrC_5XhCJeFn3qA0He8fH_qYg6_os5Y5bc_6Ci8
+@refresh_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiaWQiOjIsImdydXBvIjoyLCJleHAiOjE3NzU0MjI3ODYsInR5cGUiOiJyZWZyZXNoIn0.Lc-SF91U2ZuidrDgqMfc0FzJH2zPZX8SRe4ZrkVLQYg
 
 ### testar access token para acessar endpoint protegido
 GET http://127.0.0.1:8000/auth/me HTTP/1.1

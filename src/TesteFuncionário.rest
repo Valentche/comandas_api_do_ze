@@ -9,12 +9,12 @@ POST http://127.0.0.1:8000/funcionario/ HTTP/1.1
 content-type: application/json
 
 {
-    "nome": "Zé Mestre das Informaticas da Silva",
-    "matricula": "Ze9182",
-    "cpf": "928310928374",
-    "telefone": "49999901109",
+    "nome": "Admin",
+    "matricula": "admin123",
+    "cpf": "123456",
+    "telefone": "123456",
     "grupo": 1,
-    "senha": "Deteuspulospontocom"
+    "senha": "123321"
 }
 
 ### Verbo PUT – atualiza
