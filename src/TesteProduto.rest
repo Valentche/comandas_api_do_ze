@@ -15,15 +15,15 @@ content-type: application/json
 }
 
 ### Verbo PUT – atualiza
-PUT http://127.0.0.1:8000/produto/1 HTTP/1.1
+PUT http://127.0.0.1:8000/produto/2 HTTP/1.1
 content-type: application/json
 
 {
-    "descricao": "Pastel fofinho com recheio de queijo e orégano (UIUI)",
+    "descricao": "Pastel bom",
     "valor_unitario": 9.0
 }
 
 ### Verbo DELETE - excluir
-DELETE http://127.0.0.1:8000/produto/1 HTTP/1.1
+DELETE http://127.0.0.1:8000/produto/2 HTTP/1.1
 
 #PABLO VALENTE NETO - 2026.1 - UNIPLAC - DESENVOLVIMENTO WEB - AULA 03-20
