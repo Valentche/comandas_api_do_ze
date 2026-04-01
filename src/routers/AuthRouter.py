@@ -1,3 +1,5 @@
+from urllib import request
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -9,6 +11,7 @@ from infra.database import get_db
 from infra.security import verify_password, create_access_token, create_refresh_token, verify_refresh_token
 from infra.dependencies import get_current_active_user
 
+from services.AuditoriaService import AuditoriaService
 from settings import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 
 router = APIRouter()
@@ -18,7 +21,8 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Realiza login do funcionário e retorna access token e refresh token
 
-    - **cpf**: CPF do funcionário - **senha**: Senha do funcionário
+    - **cpf**: CPF do funcionário 
+    - **senha**: Senha do funcionário
 
     Retorna: - access_token: Token de curta duração (15 minutos) - refresh_token: Token de longa duração (7 dias)
     """
@@ -51,6 +55,15 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
                 "id": funcionario.id, # ID do funcionário
                 "grupo": funcionario.grupo
             }
+        )
+
+        # Registrar auditoria de login
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=funcionario.id,
+            acao="LOGIN",
+            recurso="AUTH",
+            request=request
         )
         
         return TokenResponse(
