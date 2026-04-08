@@ -1,5 +1,3 @@
-from urllib import request
-
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -10,6 +8,7 @@ from infra.orm.FuncionarioModel import FuncionarioDB
 from infra.database import get_db
 from infra.security import verify_password, create_access_token, create_refresh_token, verify_refresh_token
 from infra.dependencies import get_current_active_user
+from infra.rate_limit import limiter, get_rate_limit
 
 from services.AuditoriaService import AuditoriaService
 from settings import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
@@ -17,7 +16,8 @@ from settings import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 router = APIRouter()
 
 @router.post("/auth/login", response_model=TokenResponse, tags=["Autenticação"], summary="Login de funcionário - pública - retorna access e refresh token")
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit(get_rate_limit("critical"))
+async def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Realiza login do funcionário e retorna access token e refresh token
 
@@ -80,7 +80,8 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException( status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao realizar login: {str(e)}" )
 
 @router.post("/auth/refresh", response_model=TokenResponse, tags=["Autenticação"], summary="Refresh token - pública - renova access token")
-async def refresh_token(refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)):
+@limiter.limit(get_rate_limit("critical"))
+async def refresh_token(request: Request, refresh_data: RefreshTokenRequest, db: Session = Depends(get_db)):
     """
     Renova o access token usando um refresh token válido
     - **refresh_token**: Refresh token válido retornado no login
@@ -115,6 +116,15 @@ async def refresh_token(refresh_data: RefreshTokenRequest, db: Session = Depends
                 "grupo": funcionario.grupo
             }
         )
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=funcionario.id,
+            acao="REFRESH",
+            recurso="AUTH",
+            request=request
+        )
+
         return TokenResponse(
             access_token=access_token,
             refresh_token=new_refresh_token,
@@ -129,20 +139,38 @@ async def refresh_token(refresh_data: RefreshTokenRequest, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Erro ao renovar token: {str(e)}", headers={"WWW-Authenticate": "Bearer"}, )
     
 @router.get("/auth/me", response_model=FuncionarioAuth, tags=["Autenticação"], summary="Dados do usuário atual - protegida por autenticação")
-async def get_current_user_info(current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("moderate"))
+async def get_current_user_info(request: Request, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """
     Retorna informações do usuário autenticado atual
     Requer header: Authorization: Bearer <access_token>
     """
 
+    AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="ACCESS",
+        recurso="AUTH",
+        request=request
+    )
+
     return current_user
 
 @router.post("/auth/logout", tags=["Autenticação"], summary="Logout - pública")
-async def logout():
+@limiter.limit(get_rate_limit("restrictive"))
+async def logout(request: Request, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """
     Endpoint para logout (client-side)
     Na prática, o logout é implementado no cliente removendo os tokens
     Este endpoint existe apenas para completude da API
     """
     
+    AuditoriaService.registrar_acao(
+        db=db,
+        funcionario_id=current_user.id,
+        acao="LOGOUT",
+        recurso="AUTH",
+        request=request
+    )
+
     return {"message": "Logout realizado com sucesso"}

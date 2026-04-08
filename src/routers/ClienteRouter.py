@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
+from services.AuditoriaService import AuditoriaService
+from infra.rate_limit import limiter, get_rate_limit
 
 # Domain Schemas
 from domain.schemas.ClienteSchema import (
@@ -22,10 +24,18 @@ from infra.dependencies import get_current_active_user, require_group
 router = APIRouter()
 
 @router.get("/cliente/", response_model=List[ClienteResponse], tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def get_cliente(db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("critical"))
+async def get_cliente(request: Request, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna todos os clientes - protegida por autenticação"""
     try:
         clientes = db.query(ClienteDB).all()
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="ACCESS",
+            recurso="CLIENTE",
+            request=request
+        )
         return clientes
     except Exception as e:
         raise HTTPException(
@@ -34,12 +44,22 @@ async def get_cliente(db: Session = Depends(get_db), current_user: FuncionarioAu
         )
 
 @router.get("/cliente/{id}", response_model=ClienteResponse, tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def get_cliente(id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
+@limiter.limit(get_rate_limit("moderate"))
+async def get_cliente(request: Request, id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(get_current_active_user)):
     """Retorna um cliente específico pelo ID - protegida por autenticação"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
         if not cliente:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="ACCESS",
+            recurso="CLIENTE",
+            recurso_id=cliente.id,
+            request=request
+        )
         return cliente
     except HTTPException:
         raise
@@ -50,7 +70,8 @@ async def get_cliente(id: int, db: Session = Depends(get_db), current_user: Func
         )
 
 @router.post("/cliente/", response_model=ClienteResponse, status_code=status.HTTP_201_CREATED, tags=["Cliente"])
-async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1, 3]))):
+@limiter.limit(get_rate_limit("restrictive"))
+async def post_cliente(request: Request, cliente_data: ClienteCreate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1, 3]))):
     """Cria um novo cliente - protegida por autenticação e grupos 1 e 3"""
     try:
         existing_cliente = db.query(ClienteDB).filter(ClienteDB.cpf == cliente_data.cpf).first()
@@ -71,6 +92,16 @@ async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db
         db.commit()
         db.refresh(novo_cliente)
 
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="CREATE",
+            recurso="CLIENTE",
+            recurso_id=novo_cliente.id,
+            dados_novos=novo_cliente,
+            request=request
+        )
+
         return novo_cliente
     except HTTPException:
         raise
@@ -82,12 +113,15 @@ async def post_cliente(cliente_data: ClienteCreate, db: Session = Depends(get_db
         )
 
 @router.put("/cliente/{id}", response_model=ClienteResponse, tags=["Cliente"], status_code=status.HTTP_200_OK)
-async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1, 3]))):
+@limiter.limit(get_rate_limit("restrictive"))
+async def put_cliente(request: Request, id: int, cliente_data: ClienteUpdate, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1, 3]))):
     """Atualiza um cliente existente - protegida por autenticação e grupos 1 e 3"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
         if not cliente:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
+
+        dados_antigos = cliente.__dict__.copy()
 
         if cliente_data.cpf and cliente_data.cpf != cliente.cpf:
             existing_cliente = db.query(ClienteDB).filter(ClienteDB.cpf == cliente_data.cpf).first()
@@ -102,6 +136,18 @@ async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depend
             setattr(cliente, field, value)
         db.commit()
         db.refresh(cliente)
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="UPDATE",
+            recurso="CLIENTE",
+            recurso_id=cliente.id,
+            dados_antigos=dados_antigos,
+            dados_novos=cliente,
+            request=request
+        )
+
         return cliente
     except HTTPException:
         raise
@@ -113,15 +159,29 @@ async def put_cliente(id: int, cliente_data: ClienteUpdate, db: Session = Depend
         )
 
 @router.delete("/cliente/{id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Cliente"], summary="Remover cliente")
-async def delete_cliente(id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
+@limiter.limit(get_rate_limit("critical"))
+async def delete_cliente(request: Request, id: int, db: Session = Depends(get_db), current_user: FuncionarioAuth = Depends(require_group([1]))):
     """Remove um cliente - protegida por autenticação e grupo 1"""
     try:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == id).first()
         if not cliente:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
 
+        dados_antigos = cliente.__dict__.copy()
+
         db.delete(cliente)
         db.commit()
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="DELETE",
+            recurso="CLIENTE",
+            recurso_id=id,
+            dados_antigos=dados_antigos,
+            request=request
+        )
+
         return None
     except HTTPException:
         raise

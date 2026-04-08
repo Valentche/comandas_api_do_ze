@@ -3,7 +3,6 @@ from services.AuditoriaService import AuditoriaService
 from sqlalchemy.orm import Session
 from typing import List
 from infra.rate_limit import get_rate_limit,limiter
-from slowapi.errors import RateLimitExceeded
 
 # Domain Schemas
 from domain.schemas.FuncionarioSchema import (
@@ -39,6 +38,15 @@ async def get_funcionario(
     """Retorna todos os funcionários"""
     try:
         funcionarios = db.query(FuncionarioDB).all()
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="ACCESS",
+            recurso="FUNCIONARIO",
+            request=request
+        )
+
         return funcionarios
     except Exception as e:
         raise HTTPException(
@@ -48,7 +56,9 @@ async def get_funcionario(
 
 #RETORNA FUNCIONARIO PELO ID
 @router.get("/funcionario/{id}", response_model=FuncionarioResponse, tags=["Funcionário"], status_code=status.HTTP_200_OK)
+@limiter.limit(get_rate_limit("moderate"))
 async def get_funcionario(
+    request: Request,
     id: int, 
     db: Session = Depends(get_db),
     current_user: FuncionarioAuth = Depends(get_current_active_user)
@@ -58,6 +68,15 @@ async def get_funcionario(
         funcionario = db.query(FuncionarioDB).filter(FuncionarioDB.id == id).first()
         if not funcionario:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Funcionário não encontrado")
+
+        AuditoriaService.registrar_acao(
+            db=db,
+            funcionario_id=current_user.id,
+            acao="ACCESS",
+            recurso="FUNCIONARIO",
+            recurso_id=funcionario.id,
+            request=request
+        )
         
         return funcionario
     except HTTPException:
@@ -70,6 +89,7 @@ async def get_funcionario(
 
 #CRIA UM NOVO FUNCIONARIO
 @router.post("/funcionario/", response_model=FuncionarioResponse, status_code=status.HTTP_201_CREATED, tags=["Funcionário"])
+@limiter.limit(get_rate_limit("restrictive"))
 async def post_funcionario(
     request: Request,
     funcionario_data: FuncionarioCreate, 
@@ -126,6 +146,7 @@ async def post_funcionario(
 
 #ATUALIZA O FUNCIONARIO ATUAL
 @router.put("/funcionario/{id}", response_model=FuncionarioResponse, tags=["Funcionário"], status_code=status.HTTP_200_OK)
+@limiter.limit(get_rate_limit("restrictive"))
 async def put_funcionario(
     request: Request,
     id: int, 
@@ -136,6 +157,7 @@ async def put_funcionario(
     """Atualiza um funcionário existente"""
     try:
         funcionario = db.query(FuncionarioDB).filter(FuncionarioDB.id == id).first()
+        dados_antigos_obj = funcionario.__dict__.copy() if funcionario else None
 
         if not funcionario:
             raise HTTPException(
@@ -150,16 +172,16 @@ async def put_funcionario(
                     status_code=status.HTTP_400_BAD_REQUEST, 
                     detail="Já existe um funcionário com este CPF"
                 )
-            if funcionario_data.senha:
-                funcionario_data.senha = get_password_hash(funcionario_data.senha)
 
-            # se informado grupo, valida se é um grupo válido
-            if funcionario_data.grupo:
-                if funcionario_data.grupo not in [1, 2, 3]:
-                    raise HTTPException( status_code=status.HTTP_400_BAD_REQUEST, detail="Grupo inválido. Apenas grupos 1 (Admin), 2 (Atendimento Balcão) ou 3 (Atendimento Caixa) são permitidos." ) # armazena uma copia do objeto com os dados atuais, para salvar na auditoria
-                    # não pode manter referencia com funcionário, para que o auditoria possa comparar
-                    # por isso a cópia do __dict__
-                dados_antigos_obj = funcionario.__dict__.copy()
+        if funcionario_data.senha:
+            funcionario_data.senha = get_password_hash(funcionario_data.senha)
+
+        # se informado grupo, valida se é um grupo válido
+        if funcionario_data.grupo is not None and funcionario_data.grupo not in [1, 2, 3]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Grupo inválido. Apenas grupos 1 (Admin), 2 (Atendimento Balcão) ou 3 (Atendimento Caixa) são permitidos."
+            )
         
         # Atualiza apenas os campos fornecidos
         update_data = funcionario_data.model_dump(exclude_unset=True)
@@ -207,6 +229,8 @@ async def delete_funcionario(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Funcionário não encontrado"
             )
+
+        dados_antigos = funcionario.__dict__.copy()
     
         db.delete(funcionario)
         db.commit()
@@ -218,7 +242,7 @@ async def delete_funcionario(
             acao="DELETE",
             recurso="FUNCIONARIO",
             recurso_id=funcionario.id,
-            dados_antigos=funcionario,
+            dados_antigos=dados_antigos,
             dados_novos=None,
             request=request
         )
