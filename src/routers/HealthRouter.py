@@ -1,15 +1,19 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from sqlalchemy import text
 from datetime import datetime, timezone
 import psutil
 from infra.database import get_db
 from infra.orm.FuncionarioModel import FuncionarioDB
+from infra.orm.ClienteModel import ClienteDB
+from infra.orm.ProdutoModel import ProdutoDB
+from infra.rate_limit import limiter, get_rate_limit
 
 router = APIRouter()
 
 # Health check básico - Verificação básica de saúde da API - Usado por load balancers e orquestradores
 @router.get("/health", tags=["Health"], summary="Health check básico - Verificação básica de saúde da API - Usado por load balancers e orquestradores")
-async def health_check():
+@limiter.limit(get_rate_limit("low"))
+async def health_check(request: Request):
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -19,7 +23,8 @@ async def health_check():
 
 # Health check do banco de dados - Verifica conexão com banco de dados - Testa se consegue executar query simples
 @router.get("/health/database", tags=["Health"], summary="Health check do banco de dados - Verifica conexão com banco de dados - Testa se consegue executar query simples")
-async def database_health():
+@limiter.limit(get_rate_limit("low"))
+async def database_health(request: Request):
     try:
         db = next(get_db())
         # Query simples para testar conexão
@@ -48,7 +53,8 @@ async def database_health():
 
 # Health check das tabelas - Verifica se tabelas críticas existem e têm dados
 @router.get("/health/database/tables", tags=["Health"], summary="Health check das tabelas - Verifica se tabelas críticas existem e têm dados")
-async def database_tables_health():
+@limiter.limit(get_rate_limit("low"))
+async def database_tables_health(request: Request):
     try:
         db = next(get_db())
         # Verifica tabelas críticas
@@ -62,6 +68,32 @@ async def database_tables_health():
             }
         except Exception as e:
             checks["funcionarios"] = {
+                "status": "error",
+                "error": str(e)
+            }
+
+        # Verifica tabela cliente
+        try:
+            count = db.query(ClienteDB).count()
+            checks["clientes"] = {
+                "status": "healthy",
+                "count": count
+            }
+        except Exception as e:
+            checks["clientes"] = {
+                "status": "error",
+                "error": str(e)
+            }
+
+        # Verifica tabela produto
+        try:
+            count = db.query(ProdutoDB).count()
+            checks["produtos"] = {
+                "status": "healthy",
+                "count": count
+            }
+        except Exception as e:
+            checks["produtos"] = {
                 "status": "error",
                 "error": str(e)
             }
@@ -88,7 +120,8 @@ async def database_tables_health():
 
 # Health check do sistema - Verifica recursos do sistema (memória, disco, CPU)
 @router.get("/health/system", tags=["Health"], summary="Health check do sistema - Verifica recursos do sistema (memória, disco, CPU)")
-async def system_health():
+@limiter.limit(get_rate_limit("low"))
+async def system_health(request: Request):
     try:
         # Informações de memória
         memory = psutil.virtual_memory()
@@ -136,7 +169,8 @@ async def system_health():
 
 # Health check completo - Verificação completa de todos os componentes
 @router.get("/health/full", tags=["Health"], summary="Health check completo - Verificação completa de todos os componentes")
-async def full_health_check():
+@limiter.limit(get_rate_limit("low"))
+async def full_health_check(request: Request):
     try:
         # Coleta todos os health checks
         checks = {}
@@ -176,7 +210,8 @@ async def full_health_check():
 
 # Readiness probe - Verifica se API está pronta para receber tráfego - Similar ao health mas pode incluir verificações adicionais
 @router.get("/ready", tags=["Health"], summary="Readiness probe - Verifica se API está pronta para receber tráfego - Similar ao health mas pode incluir verificações adicionais")
-async def readiness_check():
+@limiter.limit(get_rate_limit("low"))
+async def readiness_check(request: Request):
     # Verifica se banco está acessível
     try:
         db = next(get_db())
@@ -194,7 +229,8 @@ async def readiness_check():
 
 # Liveness probe - Verifica se API está viva (não travada) - Usado por Kubernetes para reiniciar containers travados
 @router.get("/live", tags=["Health"], summary="Liveness probe - Verifica se API está viva (não travada) - Usado por Kubernetes para reiniciar containers travados")
-async def liveness_check():
+@limiter.limit(get_rate_limit("low"))
+async def liveness_check(request: Request):
     return {
         "status": "alive",
         "timestamp": datetime.now(timezone.utc).isoformat(),
