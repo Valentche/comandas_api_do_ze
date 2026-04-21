@@ -62,3 +62,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "9b8c1e5f2a3d4e6f7g8h9i0j1k2l3m4n5o6p7q8r9s
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+
+# Configurações de CORS
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") else "*"
