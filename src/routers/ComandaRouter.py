@@ -468,3 +468,6 @@ async def remove_produto_from_comanda(id: int, request: Request, db: AsyncSessio
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover produto da comanda: {str(e)}")
+
+
+        #ALUNO: PABLO VALENTE NETO
