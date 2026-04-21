@@ -23,15 +23,39 @@ DB_PASS = os.getenv("DB_PASS")
 
 # Ajusta STR_DATABASE conforme gerenciador escolhido
 if DB_SGDB == 'sqlite': # SQLite
-    STR_DATABASE = f"sqlite:///{DB_NAME}.db"
+    # habilita foreign keys - integridade referencial - pragma
+    STR_DATABASE = f"sqlite:///{DB_NAME}.db?foreign_keys=1"
 elif DB_SGDB == 'mysql': # MySQL
     import pymysql
     STR_DATABASE = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}?charset=utf8mb4"
 elif DB_SGDB == 'mssql': # SQL Server
     import pymssql
     STR_DATABASE = f"mssql+pymssql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}?charset=utf8"
+elif DB_SGDB == 'postgresql': # PostgreSQL
+    try:
+        import psycopg2
+    except ImportError:
+        pass
+    STR_DATABASE = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 else: # SQLite
-    STR_DATABASE = f"sqlite:///apiDatabase.db"
+    STR_DATABASE = f"sqlite:///apiDatabase.db?foreign_keys=1"
+
+# Configurações de database assíncrono
+# Converte string de conexão para async se necessário
+if STR_DATABASE.startswith("sqlite:///"):
+    ASYNC_STR_DATABASE = STR_DATABASE.replace("sqlite:///", "sqlite+aiosqlite:///")
+elif STR_DATABASE.startswith("sqlite://"):
+    ASYNC_STR_DATABASE = STR_DATABASE.replace("sqlite://", "sqlite+aiosqlite:///")
+elif DB_SGDB == 'mysql': # MySQL
+    ASYNC_STR_DATABASE = STR_DATABASE.replace("mysql+pymysql://", "mysql+aiomysql://")
+elif DB_SGDB == 'mssql': # SQL Server
+    # Nota: aiomssql não está disponível, mantém síncrono
+    ASYNC_STR_DATABASE = STR_DATABASE
+elif DB_SGDB == 'postgresql': # PostgreSQL
+    ASYNC_STR_DATABASE = STR_DATABASE.replace("postgresql://", "postgresql+asyncpg://")
+else:
+    # Para outros bancos, mantém a string original
+    ASYNC_STR_DATABASE = STR_DATABASE
 
 # Configurações Segurança API - JWT
 SECRET_KEY = os.getenv("SECRET_KEY", "9b8c1e5f2a3d4e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a")
