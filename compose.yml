@@ -39,9 +39,6 @@ services:
       dockerfile: Dockerfile
     image: valentche/comandas-api:latest
     container_name: comandas_api
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - ./.env # carrega as variáveis de ambiente do arquivo .env
     environment:
@@ -52,6 +49,7 @@ services:
     volumes:
       - ./cert:/cert:ro # copia os certificados de cert para o container
       - ./logs:/app/logs
+      - ./comandas_db.db:/app/comandas_db.db
     restart: unless-stopped
     networks:
       - comandas_network
