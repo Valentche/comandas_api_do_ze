@@ -1,0 +1,42 @@
+# Python
+
+**pycache**/
+_.pyc
+_.pyo
+\*.pyd
+.venv/
+venv/
+
+# Environment
+
+.env
+.env.local
+.env.production
+
+# Development
+
+.git/
+.vscode/
+.idea
+_.md
+docs/
+tests/
+olhar/
+_.db
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+\*.log
+logs/
+
+# Docker
+
+Dockerfile*
+docker-compose*
+compose\*.yml
+.dockerignore
