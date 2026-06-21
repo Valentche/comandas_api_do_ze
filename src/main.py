@@ -12,6 +12,7 @@ from routers import FuncionarioRouter
 from routers import ClienteRouter
 from routers import ProdutoRouter
 from routers import ComandaRouter
+from routers import RecebimentoRouter
 from routers import HealthRouter
 
 # lifespan - ciclo de vida da aplicação
@@ -60,7 +61,7 @@ app.include_router(FuncionarioRouter.router)
 app.include_router(ClienteRouter.router)
 app.include_router(ProdutoRouter.router)
 app.include_router(ComandaRouter.router)
-app.include_router(HealthRouter.router)
+app.include_router(RecebimentoRouter.router)
 app.include_router(HealthRouter.router)
 
 if __name__ == "__main__":
